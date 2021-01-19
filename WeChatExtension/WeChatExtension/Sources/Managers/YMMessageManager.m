@@ -186,9 +186,9 @@
                 NSArray *msgAry = [revokeMsgData.msgContent componentsSeparatedByString:@":"];
                 NSString *msgContent = msgAry.count > 1 ? msgAry[1] : revokeMsgData.msgContent;
                 msgContent = [msgContent stringByReplacingOccurrencesOfString:@"\n" withString:@""];
-                [msgService SendTextMessage:currentUserName toUsrName:currentUserName msgText:[NSString stringWithFormat:@"--拦截到一条撤回消息--\n群名:%@\n撤回人:%@\n内容:%@", msgContact.m_nsNickName.length > 0 ? msgContact.m_nsNickName : @"群聊", msgFromNickName, msgContent] atUserList:nil];
+                [msgService SendTextMessage:currentUserName toUsrName:currentUserName msgText:[NSString stringWithFormat:@"-- 拦截到一条撤回消息--\n群名:%@\n撤回人:%@\n内容:%@", msgContact.m_nsNickName.length > 0 ? msgContact.m_nsNickName : @"群聊", msgFromNickName, msgContent] atUserList:nil];
             } else {
-                [msgService SendTextMessage:currentUserName toUsrName:currentUserName msgText:[NSString stringWithFormat:@"--拦截到一条撤回消息--\n撤回人:%@\n内容:%@", msgFromNickName,revokeMsgData.msgContent] atUserList:nil];
+                [msgService SendTextMessage:currentUserName toUsrName:currentUserName msgText:[NSString stringWithFormat:@"-- 拦截到一条撤回消息--\n撤回人:%@\n内容:%@", msgFromNickName,revokeMsgData.msgContent] atUserList:nil];
             }
         } else {
             // Fallback on earlier versions

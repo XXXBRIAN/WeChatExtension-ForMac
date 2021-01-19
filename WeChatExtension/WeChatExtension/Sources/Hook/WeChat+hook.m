@@ -27,14 +27,20 @@
 #import "YMIMContactsManager.h"
 #import "ANYMethodLog.h"
 #import "NSViewLayoutTool.h"
+#import "YMZGMPBanModel.h"
+#import "YMDFAFilter.h"
+#import "YMPrinter.h"
 
 @implementation NSObject (WeChatHook)
 
 + (void)hookWeChat
 {
-  //      微信撤回消息
+    //微信撤回消息
     if (LargerOrEqualVersion(@"2.3.29")) {
-//         hookMethod(objc_getClass("AddMsgSyncCmdHandler"), @selector(handleSyncCmdId: withSyncCmdItems:onComplete:), [self class], @selector(hook_handleSyncCmdId: withSyncCmdItems:onComplete:));
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundeclared-selector"
+        hookMethod(objc_getClass("AddMsgSyncCmdHandler"), @selector(handleSyncCmdId: withSyncCmdItems:onComplete:), [self class], @selector(hook_handleSyncCmdId: withSyncCmdItems:onComplete:));
+#pragma clang diagnostic pop
         hookMethod(objc_getClass("MessageService"), @selector(FFToNameFavChatZZ:sessionMsgList:), [self class], @selector(hook_FFToNameFavChatZZ:sessionMsgList:));
       
     } else {
@@ -42,10 +48,13 @@
         hookMethod(objc_getClass("MessageService"), revokeMsgMethod, [self class], @selector(hook_onRevokeMsg:));
     }
     
-    //      微信消息同步
+    //微信消息同步
     SEL syncBatchAddMsgsMethod = LargerOrEqualVersion(@"2.3.22") ? @selector(FFImgToOnFavInfoInfoVCZZ:isFirstSync:) : @selector(OnSyncBatchAddMsgs:isFirstSync:);
     hookMethod(objc_getClass("MessageService"), syncBatchAddMsgsMethod, [self class], @selector(hook_receivedMsg:isFirstSync:));
-    //      微信多开
+    
+    hookMethod(objc_getClass("MMChatMessageDataSource"), @selector(onAddMsg:msgData:), [self class], @selector(hook_onAddMsg:msgData:));
+    
+    //微信多开
     SEL hasWechatInstanceMethod = LargerOrEqualVersion(@"2.3.22") ? @selector(FFSvrChatInfoMsgWithImgZZ) : @selector(HasWechatInstance);
     hookClassMethod(objc_getClass("CUtility"), hasWechatInstanceMethod, [self class], @selector(hook_HasWechatInstance));
 
@@ -54,7 +63,7 @@
         hookClassMethod(objc_getClass("NSRunningApplication"), @selector(runningApplicationsWithBundleIdentifier:), [self class], @selector(hook_runningApplicationsWithBundleIdentifier:));
     }
     
-    //      免认证登录
+    //免认证登录
     hookMethod(objc_getClass("MMLoginOneClickViewController"), @selector(onLoginButtonClicked:), [self class], @selector(hook_onLoginButtonClicked:));
     
     SEL sendLogoutCGIWithCompletionMethod = LargerOrEqualVersion(@"2.3.22") ? @selector(FFVCRecvDataAddDataToMsgChatMgrRecvZZ:) : @selector(sendLogoutCGIWithCompletion:);
@@ -63,21 +72,21 @@
     SEL manualLogoutMethod = LargerOrEqualVersion(@"2.3.22") ? @selector(FFAddSvrMsgImgVCZZ) : @selector(ManualLogout);
     hookMethod(objc_getClass("AccountService"), manualLogoutMethod, [self class], @selector(hook_ManualLogout));
 
-    //      自动登录
+    //自动登录
     hookMethod(objc_getClass("MMLoginOneClickViewController"), @selector(viewWillAppear), [self class], @selector(hook_viewWillAppear));
-    //      置底
+    //置底
     SEL sortSessionsMethod = LargerOrEqualVersion(@"2.3.22") ? @selector(FFDataSvrMgrSvrFavZZ) : @selector(sortSessions);
     hookMethod(objc_getClass("MMSessionMgr"), sortSessionsMethod, [self class], @selector(hook_sortSessions));
-    //      窗口置顶
+    //窗口置顶
     hookMethod(objc_getClass("NSWindow"), @selector(makeKeyAndOrderFront:), [self class], @selector(hook_makeKeyAndOrderFront:));
-    //      快捷回复
+    //快捷回复
     hookMethod(objc_getClass("_NSConcreteUserNotificationCenter"), @selector(deliverNotification:), [self class], @selector(hook_deliverNotification:));
     hookMethod(objc_getClass("MMNotificationService"), @selector(userNotificationCenter:didActivateNotification:), [self class], @selector(hook_userNotificationCenter:didActivateNotification:));
     hookMethod(objc_getClass("MMNotificationService"), @selector(getNotificationContentWithMsgData:), [self class], @selector(hook_getNotificationContentWithMsgData:));
-    //      登录逻辑
+    //登录逻辑
     hookMethod(objc_getClass("MMMainViewController"), @selector(viewDidLoad), [self class], @selector(hook_mainViewControllerDidLoad));
 
-    //      自带浏览器打开链接
+    //自带浏览器打开链接
     if (LargerOrEqualVersion(@"2.3.22")) {
         hookClassMethod(objc_getClass("MMWebViewHelper"), @selector(handleWebViewDataItem:windowId:), [self class], @selector(hook_handleWebViewDataItem:windowId:));
     } else {
@@ -89,10 +98,9 @@
     
     hookMethod(objc_getClass("UserDefaultsService"), @selector(stringForKey:), [self class], @selector(hook_stringForKey:));
     
-    //    设置标记未读
+    //设置标记未读
     hookMethod(objc_getClass("MMChatMessageViewController"), @selector(onClickSession), [self class], @selector(hook_onClickSession));
     hookMethod(objc_getClass("MMSessionMgr"), @selector(onUnReadCountChange:), [self class], @selector(hook_onUnReadCountChange:));
-
     hookMethod(objc_getClass("GroupStorage"), @selector(UpdateGroupMemberDetailIfNeeded:withCompletion:), [self class], @selector(hook_UpdateGroupMemberDetailIfNeeded:withCompletion:));
     
     //左下角小手机
@@ -100,22 +108,29 @@
 
      hookMethod(objc_getClass("MMMainViewController"), @selector(onUpdateHandoffExpt:), [self class], @selector(hook_onUpdateHandoffExpt:));
     
-    //      替换沙盒路径
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundeclared-selector"
+    hookClassMethod(objc_getClass("MMCGIRequester"), @selector(requestCGI: Body:Response:), [self class], @selector(hook_requestCGI: Body:Response:));
+#pragma clang diagnostic pop
+    //替换沙盒路径
     rebind_symbols((struct rebinding[2]) {
         { "NSSearchPathForDirectoriesInDomains", swizzled_NSSearchPathForDirectoriesInDomains, (void *)&original_NSSearchPathForDirectoriesInDomains },
         { "NSHomeDirectory", swizzled_NSHomeDirectory, (void *)&original_NSHomeDirectory }
     }, 2);
     
     [self setup];
-
 }
 
-- (void)hook_addChatMemberNeedVerifyMsg:(id)arg1 ContactList:(id)arg2
++ (id)hook_requestCGI:(unsigned int)arg1 Body:(id)arg2 Response:(id)arg3
 {
-    [self hook_addChatMemberNeedVerifyMsg:arg1 ContactList:arg2];
-    WCContactData *chatroomData = (WCContactData *)arg1;
-    NSDictionary *verifyDict = (NSDictionary *)arg2;
-    [[YMIMContactsManager shareInstance] checkStranger:verifyDict chatroom:chatroomData.m_nsUsrName];
+    id result = [self hook_requestCGI:arg1 Body:arg2 Response:arg3];
+    
+    return result;
+}
+
+- (void)hook_onAddMsg:(id)arg1 msgData:(id)arg2 {
+    
+    [self hook_onAddMsg:arg1 msgData:arg2];
 }
 
 //主控制器的生命周期
@@ -142,13 +157,14 @@
             [sessionMgr loadBrandSessionData];
         }
     }
+    
+    [YMDFAFilter shareInstance];
 }
 
 
 + (void)setup
 {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        
         //窗口置顶初始化
         [self setupWindowSticky];
     });
@@ -215,14 +231,11 @@
 }
 
 - (void)hook_originalImageDidLoadWithUniqueID:(id)arg1 image:(id)arg2; {
-    
-    
     return [self hook_originalImageDidLoadWithUniqueID:arg1 image:arg2];
 }
 
 
 #pragma mark - 撤回
-//备用撤回
 //- (void)hook_handleSyncCmdId:(id)arg1 withSyncCmdItems:(id)arg2 onComplete:(id)arg3
 //{
 //    NSArray <CmdItem *>*p_arg2 = (NSArray *)arg2;
@@ -231,9 +244,13 @@
 //        AddMsg *addMsg = [objc_getClass("AddMsg") parseFromData:item.cmdBuf.buffer];
 //        NSString *msg = addMsg.content.string;
 //        if ([msg rangeOfString:@"<sysmsg"].length <= 0) {
+//            if ([msg containsString:@"开始聊天了"]) {
+//                return;
+//            }
 //          [wself hook_handleSyncCmdId:arg1 withSyncCmdItems:arg2 onComplete:arg3];
 //          return;
 //        }
+        //备用撤回
 //        [wself _doParseRevokeMsg:msg msgData:nil arg1:arg1 arg2:arg2 arg3:arg3];
 //    }];
 //}
@@ -320,7 +337,6 @@
             [msg setMsgContent:newMsgContent];
             [msg setMsgCreateTime:[revokeMsgData msgCreateTime]];
             //   [msg setMesLocalID:[revokeMsgData mesLocalID]];
-            
             msg;
         });
         
@@ -332,9 +348,25 @@
 //hook 微信消息同步
 - (void)hook_receivedMsg:(NSArray *)msgs isFirstSync:(BOOL)arg2
 {
-    [self hook_receivedMsg:msgs isFirstSync:arg2];
+    __block BOOL flag = NO;
+    [msgs enumerateObjectsUsingBlock:^(AddMsg *addMsg, NSUInteger idx, BOOL * _Nonnull stop1) {
     
-    [msgs enumerateObjectsUsingBlock:^(AddMsg *addMsg, NSUInteger idx, BOOL * _Nonnull stop) {
+//        if ([addMsg.content.string containsString:@"可以开始聊天了"]) {
+//            ContactStorage *contactStorage = [[objc_getClass("MMServiceCenter") defaultCenter] getService:objc_getClass("ContactStorage")];
+//            BOOL isFriend = [contactStorage IsFriendContact:addMsg.fromUserName.string];
+//            if (isFriend) {
+//                return;
+//            }
+//        }
+        
+        //群管理中阻止群消息
+        [[YMWeChatPluginConfig sharedConfig].banModels enumerateObjectsUsingBlock:^(YMZGMPBanModel  *_Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop2) {
+            if ([addMsg.fromUserName.string isEqualToString:obj.wxid]) {
+                flag = YES;
+                *stop2 = YES;
+                return;
+            }
+        }];
         
         NSDate *now = [NSDate date];
         NSTimeInterval nowSecond = now.timeIntervalSince1970;
@@ -365,6 +397,12 @@
         }
         
     }];
+    
+    if (flag) {
+        return;
+    }
+    
+    [self hook_receivedMsg:msgs isFirstSync:arg2];
 }
 
 //hook 微信通知消息
@@ -455,8 +493,7 @@
 - (void)hook_viewWillAppear
 {
     [self hook_viewWillAppear];
-    
-    BOOL autoAuthEnable = [[YMWeChatPluginConfig sharedConfig] autoAuthEnable];
+   
     WeChat *wechat = [objc_getClass("WeChat") sharedInstance];
      MMLoginOneClickViewController *loginVC = wechat.mainWindowController.loginViewController.oneClickViewController;
     
@@ -468,11 +505,6 @@
         }
     }
     
-    if (!autoAuthEnable) {
-        return;
-    }
-    
-
     NSButton *autoLoginButton = ({
         NSButton *btn = [NSButton tk_checkboxWithTitle:@"" target:self action:@selector(selectAutoLogin:)];
         btn.frame = NSMakeRect(110, 60, 80, 30);
@@ -489,30 +521,26 @@
     BOOL autoLogin = [[YMWeChatPluginConfig sharedConfig] autoLoginEnable];
     autoLoginButton.state = autoLogin;
 
-    BOOL wechatHasRun = [self checkWeChatLaunched];
-    AccountService *accountService = [[objc_getClass("MMServiceCenter") defaultCenter] getService:objc_getClass("AccountService")];
-    if (autoLogin && wechatHasRun && [accountService canAutoAuth]) {
-        static dispatch_once_t onceToken;
-        dispatch_once(&onceToken, ^{
+    BOOL wechatHasRun = [YMDeviceHelper checkWeChatLaunched];
+    int wechatLaunchCount = [YMDeviceHelper checkWeChatLaunchedCount];
+    BOOL autoAuthEnable = [[YMWeChatPluginConfig sharedConfig] autoAuthEnable];
+    
+    if (autoAuthEnable) {
+        AccountService *accountService = [[objc_getClass("MMServiceCenter") defaultCenter] getService:objc_getClass("AccountService")];
+        if (autoLogin && wechatHasRun && [accountService canAutoAuth]) {
+            static dispatch_once_t onceToken;
+            dispatch_once(&onceToken, ^{
+                [loginVC onLoginButtonClicked:nil];
+            });
+        }
+    } else {
+        if (autoLogin && wechatLaunchCount < 2) {
             [loginVC onLoginButtonClicked:nil];
-        });
+        }
     }
 }
 
-- (BOOL)checkWeChatLaunched
-{
-    NSArray *ary = [[NSWorkspace sharedWorkspace] launchedApplications];
-    __block BOOL isWeChatLaunched = NO;
-    [ary enumerateObjectsUsingBlock:^(NSDictionary *  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        NSLog(@"启动微信");
-        NSString *bundleID = [obj valueForKey:@"NSApplicationBundleIdentifier"];
-        if ([bundleID isEqualToString:@"com.tencent.xinWeChat"]) {
-            isWeChatLaunched = YES;
-        }
-    }];
-    return isWeChatLaunched;
-}
-
+//置底
 - (void)hook_sortSessions
 {
     [self hook_sortSessions];
@@ -538,15 +566,6 @@
                 [arrSession addObject:sessionInfo];
             }
         }];
-        //Fix 2.4.2(15650)Beta 148 （#616）
-        dispatch_async(dispatch_get_main_queue(), ^{
-            @try {
-                WeChat *wechat = [objc_getClass("WeChat") sharedInstance];
-                [wechat.chatsViewController.tableView reloadData];
-            } @catch (NSException *exception) {
-
-            }
-        });
     }
 }
 
@@ -570,7 +589,7 @@
         hookMethod(objc_getClass("MMUpdateMgr"), @selector(sparkleUpdater), [self class], @selector(hook_sparkleUpdater));
     } else {
         if ([wechat respondsToSelector:@selector(checkForUpdatesInBackground)]) {
-            //      去除刚启动微信更新弹窗提醒
+            //去除刚启动微信更新弹窗提醒
             hookMethod(objc_getClass("WeChat"), @selector(checkForUpdatesInBackground), [self class], @selector(hook_checkForUpdatesInBackground));
         }
     }
@@ -580,7 +599,7 @@
     [self hook_applicationDidFinishLaunching:arg1];
 }
 
-//  强制用户退出时保存聊天记录
+//强制用户退出时保存聊天记录
 - (id)hook_stringForKey:(NSString *)key
 {
     if ([key isEqualToString:@"kMMUserDefaultsKey_SaveChatHistory"]) {
@@ -635,7 +654,7 @@
     }
 }
 
-//  设置标记未读
+//设置标记未读
 - (void)hook_onClickSession
 {
     [self hook_onClickSession];
@@ -657,6 +676,30 @@
     }
     [self hook_onUnReadCountChange:arg1];
 }
+
+#pragma mark - QuiteMonitor
+- (void)hook_UpdateGroupMemberDetailIfNeeded:(id)arg1 withCompletion:(id)arg2
+{
+    if ([YMWeChatPluginConfig sharedConfig].quitMonitorEnable) {
+        [[YMIMContactsManager shareInstance] monitorQuitGroup:arg1];
+    }
+    [self hook_UpdateGroupMemberDetailIfNeeded:arg1 withCompletion:arg2];
+}
+
+- (void)hook_onUpdateHandoffExpt:(BOOL)arg1
+{
+    [self hook_onUpdateHandoffExpt:YES];
+}
+
+- (void)hook_MainViewDidLoad
+{
+    [self hook_MainViewDidLoad];
+    if (LargerOrEqualVersion(@"2.4.0")) {
+        MMMainViewController *mainVC = (MMMainViewController *)self;
+        [mainVC onUpdateHandoffExpt:YES];
+    }
+}
+
 #pragma mark - hook 系统方法
 - (void)hook_makeKeyAndOrderFront:(nullable id)sender
 {
@@ -667,7 +710,6 @@
 }
 
 #pragma mark - Other
-
 - (void)autoReplyByAI:(AddMsg *)addMsg
 {
     if (addMsg.msgType != 1) {
@@ -686,7 +728,7 @@
     }
     
     if ([msgContact isBrandContact] || [msgContact isSelf]) {
-        //        该消息为公众号或者本人发送的消息
+        //该消息为公众号或者本人发送的消息
         return;
     }
     YMAIAutoModel *AIModel = [[YMWeChatPluginConfig sharedConfig] AIReplyModel];
@@ -740,7 +782,7 @@
         msgContact = [sessionMgr getContact:userName];
     }
     if ([msgContact isBrandContact] || [msgContact isSelf]) {
-        //        该消息为公众号或者本人发送的消息
+        //该消息为公众号或者本人发送的消息
         return;
     }
     VAutoForwardingModel *model = [[YMWeChatPluginConfig sharedConfig] VAutoForwardingModel];
@@ -801,11 +843,7 @@
     }];
 }
 
-/**
- 自动回复
- 
- @param addMsg 接收的消息
- */
+//自动回复
 - (void)autoReplyWithMsg:(AddMsg *)addMsg
 {
     //    addMsg.msgType != 49
@@ -838,7 +876,7 @@
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 NSString *message = nil;
                 if ([YMWeChatPluginConfig sharedConfig].languageType == PluginLanguageTypeZH) {
-                    message = [NSString stringWithFormat:@"⚠️警告⚠️\n您对@%@ 设置了AI回复且同时打开了自动回复\n小助手将只会对@%@ 进行AI回复",nick,nick];
+                    message = [NSString stringWithFormat:@"⚠️警告⚠️\n您对@%@ 设置了AI回复且同时打开了自动回复\nBrian小助手将只会对@%@ 进行AI回复",nick,nick];
                 } else {
                     message = @"You cannot set AI reply and auto reply to him at the same time";
                 }
@@ -927,11 +965,7 @@
     }
 }
 
-/**
- 远程控制
- 
- @param addMsg 接收的消息
- */
+//远程控制
 - (void)remoteControlWithMsg:(AddMsg *)addMsg
 {
     NSDate *now = [NSDate date];
@@ -998,29 +1032,5 @@ static NSString *(*original_NSHomeDirectory)(void);
 
 NSString *swizzled_NSHomeDirectory(void) {
     return [NSString stringWithFormat:@"%@/Library/Containers/com.tencent.xinWeChat/Data",original_NSHomeDirectory()];
-}
-
-
-#pragma mark -
-- (void)hook_UpdateGroupMemberDetailIfNeeded:(id)arg1 withCompletion:(id)arg2
-{
-    if ([YMWeChatPluginConfig sharedConfig].quitMonitorEnable) {
-        [[YMIMContactsManager shareInstance] monitorQuitGroup:arg1];
-    }
-    [self hook_UpdateGroupMemberDetailIfNeeded:arg1 withCompletion:arg2];
-}
-
-- (void)hook_onUpdateHandoffExpt:(BOOL)arg1
-{
-    [self hook_onUpdateHandoffExpt:YES];
-}
-
-- (void)hook_MainViewDidLoad
-{
-    [self hook_MainViewDidLoad];
-    if (LargerOrEqualVersion(@"2.4.0")) {
-        MMMainViewController *mainVC = (MMMainViewController *)self;
-        [mainVC onUpdateHandoffExpt:YES];
-    }
 }
 @end

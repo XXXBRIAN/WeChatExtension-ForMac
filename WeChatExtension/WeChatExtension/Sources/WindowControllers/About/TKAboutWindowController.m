@@ -25,9 +25,9 @@
 - (void)windowDidLoad
 {
     [super windowDidLoad];
-    self.titleLabel.stringValue = YMLanguage(@"微信小助手", @"WeChat Assistant");
-    self.homePageTitleLabel.stringValue = YMLanguage(@"唯一主页:", @"Only Homepage:");
-    self.WeiboLabel.stringValue = YMLanguage(@"微博:", @"Weibo:");
+    self.titleLabel.stringValue = YMLanguage(@"Brian微信小助手", @"Brian WeChat Assistant");
+    self.homePageTitleLabel.stringValue = YMLanguage(@"项目:", @"Program:");
+    self.WeiboLabel.stringValue = YMLanguage(@"Github 主页:", @"Github Page:");
     self.window.backgroundColor = [NSColor whiteColor];
     NSDictionary *localInfo = [[YMWeChatPluginConfig sharedConfig] localInfoPlist];
     if (!localInfo) {
@@ -36,18 +36,18 @@
     NSString *localBundle = localInfo[@"CFBundleShortVersionString"];
     self.versionLabel.stringValue = [NSString stringWithFormat:@"V %@",localBundle];
     
-    self.aliPay.image = kImageWithName(@"aliPayCode.png");
+    //self.aliPay.image = kImageWithName(@"aliPayCode.png");
     
-    self.WeChatPayImageView.image = kImageWithName(@"WeChatPayCode.png");
+    //self.WeChatPayImageView.image = kImageWithName(@"WeChatPayCode.png");
 }
 
 - (IBAction)didClickHomepageURL:(NSButton *)sender
 {
-    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://github.com/MustangYM/WeChatExtension-ForMac"]];
+    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://github.com/XXXBRIAN/WeChatExtension-ForMac"]];
 }
 
 - (IBAction)didClickWeiBo:(id)sender {
-    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://weibo.com/2868079432/profile?rightmod=1&wvr=6&mod=personinfo&is_all=1"]];
+    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://github.com/XXXBRIAN"]];
 }
 
 @end

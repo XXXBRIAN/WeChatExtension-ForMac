@@ -30,9 +30,9 @@ static void inline dynamicMethodIMP(id self,SEL _cmd)
     }];
     
     if (flag) {
-        NSString *msg = [NSString stringWithFormat:@"%@ 错误\n请点击【关于与捐赠】->【项目主页】\n提issue联系开发者修复!",NSStringFromSelector(_cmd)];
+        NSString *msg = [NSString stringWithFormat:@"%@ 错误\n请点击【关于】->【项目主页】\n联系开发者修复!",NSStringFromSelector(_cmd)];
         NSString *englishMsg = [NSString stringWithFormat:@"%@ crash\nClick【About And Contribute】->【Project Homepage】\nContact developer to repair!",NSStringFromSelector(_cmd)];
-        NSAlert *alert = [NSAlert alertWithMessageText:YMLanguage(@"拦截到崩溃", @"WARNING FOR CRASH")
+        NSAlert *alert = [NSAlert alertWithMessageText:YMLanguage(@"Brian小助手拦截到崩溃", @"WARNING FOR CRASH")
                                          defaultButton:YMLanguage(@"确定", @"YES")                       alternateButton:nil
                                            otherButton:nil                              informativeTextWithFormat:@"%@", YMLanguage(msg, englishMsg)];
         [alert runModal];
@@ -42,8 +42,8 @@ static void inline dynamicMethodIMP(id self,SEL _cmd)
 @implementation NSObject (Safe)
 + (void)load
 {
-    hookMethod(objc_getClass("NSObject"), @selector(methodSignatureForSelector:), [self class], @selector(safe_methodSignatureForSEL:));
-    hookMethod(objc_getClass("NSObject"), @selector(forwardInvocation:), [self class], @selector(safe_forwardInvocation:));
+//    hookMethod(objc_getClass("NSObject"), @selector(methodSignatureForSelector:), [self class], @selector(safe_methodSignatureForSEL:));
+//    hookMethod(objc_getClass("NSObject"), @selector(forwardInvocation:), [self class], @selector(safe_forwardInvocation:));
 }
 
 - (NSMethodSignature *)safe_methodSignatureForSEL:(SEL)arg1
